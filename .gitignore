@@ -1,4 +1,5 @@
 fastapi/
 .env
+*.pyc
 __pycache__/
 .agents/
