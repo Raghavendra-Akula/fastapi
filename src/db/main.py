@@ -20,7 +20,7 @@ async def init_db():
     return
 
 
-async def get_session()->AsyncSession:
+async def get_session()->AsyncSession: 
     Session = sessionmaker(
         bind = engine,
         class_= AsyncSession,
@@ -30,7 +30,7 @@ async def get_session()->AsyncSession:
     async with Session() as session:
         yield session
 
-        
+
 
 
     
