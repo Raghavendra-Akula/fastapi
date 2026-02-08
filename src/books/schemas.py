@@ -1,3 +1,5 @@
+# to know information format which UI can send to API we are defining this schemas format to capture it easily and send back to UI properly.
+
 from pydantic import BaseModel
 import uuid
 from datetime import datetime, date
