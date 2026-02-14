@@ -7,7 +7,8 @@ from fastapi.exceptions import HTTPException
 from .utils import create_access_token, decode_token, verify_password
 from datetime import timedelta, datetime
 from fastapi.responses import JSONResponse
-from .dependencies import RefreshTokenBearer
+from .dependencies import RefreshTokenBearer, AccessTokenBearer
+from src.db.redis import add_jti_to_blocklist
 
 REFRESH_TOKEN_EXPIRY = 2
 
@@ -72,7 +73,7 @@ async def login_users(login_data: UserLoginModel, session: AsyncSession = Depend
 @auth_router.get('/refresh_token')
 async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer())):
     expiry_timestamp = token_details['exp']
-    print(expiry_timestamp)
+    print(datetime.fromtimestamp(expiry_timestamp))
     if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
         new_access_token = create_access_token(
             user_data = token_details['user']
@@ -87,4 +88,18 @@ async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer(
     return HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail="Invalid or expired token"
+    )
+
+
+# route when user logsout of the site. we need to block those tokens so that he should not be able to login again with that token. 
+@auth_router.get('/logout')
+async def revoke_token(token_details : dict = Depends(AccessTokenBearer()))-> None:
+    jti = token_details['jti']
+    await add_jti_to_blocklist(jti)
+
+    return JSONResponse(
+        {
+            "message" : "logged out successfully"
+        },
+        status_code=status.HTTP_200_OK
     )
