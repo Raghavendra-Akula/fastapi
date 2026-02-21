@@ -1,10 +1,17 @@
 from fastapi.security import HTTPBearer
-from fastapi import Request, status
+from fastapi import Request, status, Depends
 from fastapi.security.http import HTTPAuthorizationCredentials
 from .utils import decode_token
 from fastapi.exceptions import HTTPException
 from datetime import datetime
 from src.db.redis import token_in_blocklist
+from sqlmodel.ext.asyncio.session import AsyncSession
+from src.db.main import get_session
+from .service import UserService
+from typing import List
+from .models import User
+
+user_service = UserService()
 
 class TokenBearer(HTTPBearer):
     def __init__(self, auto_error=True):
@@ -51,3 +58,29 @@ class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data : dict) -> None :
         if token_data and not token_data['refresh']:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please Provide an valid refresh token")
+        
+# Now working for role based access control - creating a function for getting current user state. to assign the role based on his eligibility
+
+async def get_current_user(
+        token_details : dict = Depends(AccessTokenBearer()),
+        session : AsyncSession = Depends(get_session)
+):
+    user_email = token_details['user']['email']
+
+    user = await user_service.get_user(user_email, session)
+
+    return user
+
+class roleChecker():
+    def __init__(self, allowed_roles: List[str]) -> None:
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, current_user : User = Depends(get_current_user)):
+        if current_user.role in self.allowed_roles:
+            return True
+        raise HTTPException(
+            status_code= status.HTTP_403_FORBIDDEN,
+            detail="Don't have sufficent access to this specific endpoint"
+        )
+
+

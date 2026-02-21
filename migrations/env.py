@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from src.auth.models import User
 from src.books.models import Book
-import sqlmodel
-from src.config import config
+from sqlmodel import SQLModel
+from src.config import Config as config
 
 database_url = config.DATABASE_URL
 
