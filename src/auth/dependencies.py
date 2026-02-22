@@ -9,7 +9,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.db.main import get_session
 from .service import UserService
 from typing import List
-from .models import User
+from src.db.models import User
 
 user_service = UserService()
 
@@ -23,9 +23,6 @@ class TokenBearer(HTTPBearer):
         token=creds.credentials
         token_data= decode_token(token)
 
-        expiry_timestamp = token_data['exp']
-        print(datetime.fromtimestamp(expiry_timestamp))
-
         if not self.token_valid(token):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Expired Token")
         
@@ -34,6 +31,8 @@ class TokenBearer(HTTPBearer):
                 "error" : "This token has been revoked because it is part of blocklist",
                 "resolution" : "Please get new token"
                 })
+        expiry_timestamp = token_data['exp']
+        print(datetime.fromtimestamp(expiry_timestamp))
 
         self.verify_token_data(token_data)
         

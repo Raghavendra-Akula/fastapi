@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Column, Relationship
 import sqlalchemy.dialects.postgresql as pg
 import uuid
 from datetime import datetime
-from src.books.models import Book
+from src.db.models import Book
 from typing import List
 
 

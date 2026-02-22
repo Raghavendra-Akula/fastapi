@@ -5,6 +5,7 @@ from src.config import Config
 from jose import jwt
 import uuid
 import logging
+from jose.exceptions import ExpiredSignatureError, JWTError
 
 
 ACCESS_TOKEN_EXPIRY = 3600
@@ -47,8 +48,12 @@ def decode_token(token: str) -> dict:
                 algorithms= Config.JWT_ALGORITHM
             )
         return token_data
-    except jwt.PyJWTError as e :
-        logging.exception(e)
+    except ExpiredSignatureError as e:
+        logging.info("JWT expired: %s", e)
+        return None
+
+    except JWTError as e:
+        logging.info("Invalid JWT: %s", e)
         return None
 
     

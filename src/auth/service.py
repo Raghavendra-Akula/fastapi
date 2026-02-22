@@ -1,4 +1,4 @@
-from .models import User
+from src.db.models import User
 from .schemas import UserCreateModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .utils import generate_passwd_hash
@@ -8,7 +8,6 @@ from sqlmodel import select
 class UserService():
     async def get_user(self, email: str, session: AsyncSession):
         statement = select(User).where(User.email == email)
-
         result = await session.exec(statement)
         user = result.first()
         return user
