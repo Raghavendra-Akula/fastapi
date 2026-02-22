@@ -14,6 +14,7 @@ class Book (BaseModel):
     language: str
     created_at: datetime 
     updated_at : datetime
+    user_uid : uuid.UUID | None
 
 
 class BookCreateModel (BaseModel):
