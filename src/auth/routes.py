@@ -9,6 +9,7 @@ from datetime import timedelta, datetime
 from fastapi.responses import JSONResponse
 from .dependencies import RefreshTokenBearer, AccessTokenBearer, get_current_user, roleChecker
 from src.db.redis import add_jti_to_blocklist
+from src.errors import UserAlreadyExists, UserNotFound, InvalidCredentials, InvalidToken
 
 REFRESH_TOKEN_EXPIRY = 2
 
@@ -22,7 +23,7 @@ async def create_user_account(user_data: UserCreateModel, session: AsyncSession 
     email = user_data.email
     user_exists = await user_service.user_exists(email, session)
     if user_exists:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
+        raise UserAlreadyExists
     new_user = await user_service.create_user(user_data, session)
 
     return new_user
@@ -66,10 +67,7 @@ async def login_users(login_data: UserLoginModel, session: AsyncSession = Depend
               }
           )
        
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail = "Invalid email or password"
-    )
+    raise InvalidCredentials
 
 # when access token expires this endpoint is used to create new access token from refresh tokens and 
 @auth_router.get('/refresh_token')
@@ -87,10 +85,7 @@ async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer(
 
 
 
-    return HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Invalid or expired token"
-    )
+    return InvalidToken
 
 #route to get the current user state his all details from the jti token he provided.
 @auth_router.get('/me', response_model=UserModel)

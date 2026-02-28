@@ -10,6 +10,9 @@ from src.db.main import get_session
 from .service import UserService
 from typing import List
 from src.db.models import User
+from src.errors import (
+    InvalidToken, AccessTokenRequired, RefreshTokenRequired, InsufficientPermission
+    )
 
 user_service = UserService()
 
@@ -24,13 +27,11 @@ class TokenBearer(HTTPBearer):
         token_data= decode_token(token)
 
         if not self.token_valid(token):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Expired Token")
+            # raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Expired Token")
+            raise InvalidToken()
         
         if await token_in_blocklist(token_data['jti']):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={ 
-                "error" : "This token has been revoked because it is part of blocklist",
-                "resolution" : "Please get new token"
-                })
+            raise InsufficientPermission
         expiry_timestamp = token_data['exp']
         print(datetime.fromtimestamp(expiry_timestamp))
 
@@ -51,12 +52,12 @@ class TokenBearer(HTTPBearer):
 class AccessTokenBearer(TokenBearer):
     def verify_token_data(self, token_data : dict) -> None :
         if token_data and token_data['refresh']:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please Provide an access token")
+            raise AccessTokenRequired
 
 class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data : dict) -> None :
         if token_data and not token_data['refresh']:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please Provide an valid refresh token")
+            raise RefreshTokenRequired
         
 # Now working for role based access control - creating a function for getting current user state. to assign the role based on his eligibility
 
@@ -77,9 +78,6 @@ class roleChecker():
     def __call__(self, current_user : User = Depends(get_current_user)):
         if current_user.role in self.allowed_roles:
             return True
-        raise HTTPException(
-            status_code= status.HTTP_403_FORBIDDEN,
-            detail="Don't have sufficent access to this specific endpoint"
-        )
+        raise InsufficientPermission
 
 

@@ -8,6 +8,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.books.service import BookService
 from src.auth.dependencies import AccessTokenBearer, roleChecker
 from .schemas import BookDetail
+from src.errors import BookNotFound
 
 book_router = APIRouter()
 book_service = BookService()
@@ -39,19 +40,13 @@ async def get_book(book_uid: str, session: AsyncSession = Depends(get_session), 
     if book :
         return book
     else :
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Book not found"
-            )
+        raise BookNotFound
 
 @book_router.patch("/{book_uid}", response_model=updateBookModel, dependencies=[role_checker])
 async def update_book(book_uid: str, update_book: updateBookModel, session: AsyncSession = Depends(get_session), token_details = Depends(access_token_bearer)) -> dict:
     updated_book = await book_service.update_book(book_uid, update_book, session)
     if updated_book is None :\
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Book not found"
-            )
+        raise BookNotFound
     else:
         return update_book       
 
@@ -59,10 +54,7 @@ async def update_book(book_uid: str, update_book: updateBookModel, session: Asyn
 async def delete_book(book_uid: str, session: AsyncSession = Depends(get_session), token_details = Depends(access_token_bearer)) -> dict:
     book_to_delete = await book_service.delete_book(book_uid, session)
     if book_to_delete is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Book not found"
-            )
+        raise BookNotFound
     else :
         return {"message": "Book deleted successfully"}
         
