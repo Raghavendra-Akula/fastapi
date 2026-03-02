@@ -6,9 +6,9 @@ from sqlalchemy.orm import sessionmaker
 
 engine = AsyncEngine(
      create_engine(
-    url=Config.DATABASE_URL,
-    echo=True
+    url=Config.DATABASE_URL
 ))
+#  use echo variable in engine to display the actions performed in backend on terminal.
 
 # async fucntion to initialize the database
 async def init_db():
